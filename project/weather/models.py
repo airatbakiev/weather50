@@ -3,9 +3,9 @@ from django.db.models import UniqueConstraint
 
 
 class City(models.Model):
-    api_id = models.IntegerField('ID во внешнем API')
     name = models.CharField('Название города', max_length=150)
     country = models.CharField('Код страны', max_length=150)
+    country_name = models.CharField('Название страны', max_length=255)
     lat = models.DecimalField('Широта', max_digits=11, decimal_places=7)
     lon = models.DecimalField('Долгота', max_digits=11, decimal_places=7)
 
@@ -14,7 +14,7 @@ class City(models.Model):
         verbose_name_plural = 'Города'
         constraints = [
             UniqueConstraint(
-                fields=['api_id', 'name'], name='unique_cities'
+                fields=['name', 'country'], name='unique_cities'
             ),
         ]
 
