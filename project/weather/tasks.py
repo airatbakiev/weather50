@@ -8,7 +8,7 @@ from . import models
 
 
 @shared_task
-def get_cities():
+def task_get_cities():
     dadata_url = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/country'
     token = 'Token ' + getattr(settings, 'TOKEN', {})
     headers = {
@@ -38,7 +38,7 @@ def get_cities():
 
 
 @shared_task
-def get_weather():
+def task_get_weather():
     base_url = 'https://api.openweathermap.org/data/2.5/weather'
     appid = '&appid=' + getattr(settings, 'APPID', {})
     # TODO: add params

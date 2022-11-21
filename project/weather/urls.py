@@ -5,5 +5,6 @@ from . import views
 app_name = 'weather'
 
 urlpatterns = [
-    path('', views.main, name='main')
+    path('cities/', views.get_cities, name='cities'),
+    path('data/', views.get_weather, name='data')
 ]

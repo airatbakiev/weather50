@@ -1,3 +1,5 @@
-from django.shortcuts import render
+from django.http import HttpResponse
 
-# Create your views here.
+
+def users_def(request):
+    return HttpResponse('View для управления пользователями')

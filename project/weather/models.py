@@ -22,17 +22,17 @@ class City(models.Model):
         return self.name
 
 
-class Condition(models.Model):
-    api_id = models.IntegerField('ID во внешнем API')
-    name = models.CharField('Группа погодных параметров', max_length=150)
-    description = models.CharField('Описание погодных условий', max_length=150)
-
-    class Meta:
-        verbose_name = 'Погодное состояние'
-        verbose_name_plural = 'Погодные условия'
-
-    def __str__(self):
-        return self.description
+# class Condition(models.Model):
+#     condition_id = models.IntegerField('Идентификатор погодных условий')
+#     name = models.CharField('Группа погодных параметров', max_length=150)
+#     description = models.CharField('Описание погодных условий', max_length=150)
+#
+#     class Meta:
+#         verbose_name = 'Погодное состояние'
+#         verbose_name_plural = 'Погодные условия'
+#
+#     def __str__(self):
+#         return self.description
 
 
 class MainParams(models.Model):
@@ -66,14 +66,20 @@ class Snow(models.Model):
     three_h = models.FloatField('Снег за последние 3 часа, мм', blank=True, null=True)
 
 
-class Weather(models.Model):
-    weather = models.ForeignKey(Condition, on_delete=models.CASCADE)
-    main = models.OneToOneField(MainParams, on_delete=models.CASCADE)
+class WeatherCollect(models.Model):
+    # weather = models.ManyToManyField(Condition, through='WeatherCondition')
+    main = models.OneToOneField(MainParams, on_delete=models.CASCADE, blank=True, null=True)
     visibility = models.FloatField('Видимость, метр', blank=True, null=True)
-    wind = models.OneToOneField(Wind, on_delete=models.CASCADE)
-    clouds = models.OneToOneField(Clouds, on_delete=models.CASCADE)
-    rain = models.OneToOneField(Rain, on_delete=models.CASCADE)
-    snow = models.OneToOneField(Snow, on_delete=models.CASCADE)
-    dt = models.IntegerField('Время вычисления данных, unix, UTC')
-    timezone = models.IntegerField('Сдвиг от UTC, секунды')
-    city = models.ForeignKey(City, on_delete=models.CASCADE)
+    wind = models.OneToOneField(Wind, on_delete=models.CASCADE, blank=True, null=True)
+    clouds = models.OneToOneField(Clouds, on_delete=models.CASCADE, blank=True, null=True)
+    rain = models.OneToOneField(Rain, on_delete=models.CASCADE, blank=True, null=True)
+    snow = models.OneToOneField(Snow, on_delete=models.CASCADE, blank=True, null=True)
+    dt = models.IntegerField('Время вычисления данных, unix, UTC', blank=True, null=True)
+    timezone = models.IntegerField('Сдвиг от UTC, секунды', blank=True, null=True)
+    # city = models.ForeignKey(City, on_delete=models.CASCADE)
+    created = models.DateTimeField('Время создания записи', auto_now=True)
+
+
+# class WeatherCondition(models.Model):
+#     weather = models.ForeignKey(WeatherCollect, on_delete=models.CASCADE)
+#     condition = models.ForeignKey(Condition, on_delete=models.CASCADE)
