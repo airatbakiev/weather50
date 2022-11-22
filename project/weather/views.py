@@ -55,13 +55,14 @@ def get_cities(request):
 
 
 def get_weather(request):
-    cities = models.City.objects.all()
+    cities = models.City.objects.values()
     for city in cities:
-        params = ('?lat=' + str(city.lat) + '&lon=' + str(city.lon)
+        params = ('?lat=' + str(city['lat']) + '&lon=' + str(city['lon'])
                   + '&lang=ru&units=metric')
         weather_url = BASE_WEATHER_URL + params + APPID
-        response = requests.get(weather_url)
-        serializer = serializers.WeatherSerializer(data=response.json())
+        response = requests.get(weather_url).json()
+        response['city'] = city
+        serializer = serializers.WeatherSerializer(data=response)
         if serializer.is_valid():
             serializer.save()
         else:

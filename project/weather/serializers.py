@@ -3,61 +3,64 @@ from rest_framework import serializers
 from . import models
 
 
-# class ConditionSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = models.Condition
-#         fields = '__all__'
+class ConditionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='condition_id')
+
+    class Meta:
+        model = models.Condition
+        fields = ('id', 'main', 'description', 'icon')
 
 
 class MainParamsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.MainParams
-        fields = '__all__'
+        fields = ('temp', 'feels_like', 'pressure', 'humidity', 'temp_min',
+                  'temp_max', 'sea_level', 'grnd_level')
 
 
 class WindSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Wind
-        fields = '__all__'
+        fields = ('speed', 'deg', 'gust')
 
 
 class CloudsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Clouds
-        fields = '__all__'
+        fields = ('all', )
 
 
 class RainSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Rain
-        fields = '__all__'
+        fields = ('one_h', 'three_h')
 
 
 class SnowSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Snow
+        fields = ('one_h', 'three_h')
+
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.City
         fields = '__all__'
 
 
-# class CitySerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = models.City
-#         fields = '__all__'
-
-
 class WeatherSerializer(serializers.ModelSerializer):
-    # weather = ConditionSerializer(many=True)
+    weather = ConditionSerializer(many=True)
     main = MainParamsSerializer(required=False)
     wind = WindSerializer(required=False)
     clouds = CloudsSerializer(required=False)
     rain = RainSerializer(required=False)
     snow = SnowSerializer(required=False)
-    # city = CitySerializer()
+    city = CitySerializer()
 
     class Meta:
         model = models.WeatherCollect
         fields = (
-            # 'weather',
+            'weather',
             'main',
             'visibility',
             'wind',
@@ -66,12 +69,12 @@ class WeatherSerializer(serializers.ModelSerializer):
             'snow',
             'dt',
             'timezone',
-            # 'city',
+            'city',
         )
 
     def create(self, validated_data):
         # Подготовка данных к записи
-        # condition_data = validated_data.pop('weather')
+        condition_data = validated_data.pop('weather')
         main_data = validated_data.pop('main', None)
         wind_data = validated_data.pop('wind', None)
         clouds_data = validated_data.pop('clouds', None)
@@ -91,32 +94,40 @@ class WeatherSerializer(serializers.ModelSerializer):
             three_h = snow_data.pop('3h', None)
             if three_h:
                 snow_data['three_h'] = three_h
-        # city = models.City.objects.filter(
-        #     lat=coord['lat'], lon=coord['lon']
-        # ).first()
-        # validated_data['city'] = city
+        city_dict = validated_data.pop('city')
+        city = models.City.objects.filter(
+            lat=city_dict['lat'], lon=city_dict['lon']
+        ).first()
         # Запись данных в БД
-        main = models.MainParams.objects.create(**main_data)
-        wind = models.Wind.objects.create(**wind_data)
-        clouds = models.Clouds.objects.create(**clouds_data)
-        rain = models.Rain.objects.create(**rain_data)
-        snow = models.Snow.objects.create(**snow_data)
-        weather_collect = models.Weather.objects.create(
-            main=main,
-            visibility=validated_data.pop('visibility', None),
-            wind=wind,
-            clouds=clouds,
-            rain=rain,
-            snow=snow,
-            dt=validated_data.pop('dt', None),
-            timezone=validated_data.pop('timezone', None)
+        w_collect = models.WeatherCollect.objects.create(
+            city=city, **validated_data
         )
-        # for condition in condition_data:
-        #     current_condition, status = (
-        #         models.Condition.objects.get_or_create(**condition)
-        #     )
-        #     models.WeatherCondition.objects.create(
-        #         weather=weather_collect,
-        #         condition=current_condition
-        #     )
-        return weather_collect
+        if main_data:
+            models.MainParams.objects.create(
+                weather_collect=w_collect, **main_data
+            )
+        if wind_data:
+            models.Wind.objects.create(
+                weather_collect=w_collect, **wind_data
+            )
+        if clouds_data:
+            models.Clouds.objects.create(
+                weather_collect=w_collect, **clouds_data
+            )
+        if rain_data:
+            models.Rain.objects.create(
+                weather_collect=w_collect, **rain_data
+            )
+        if snow_data:
+            models.Snow.objects.create(
+                weather_collect=w_collect, **snow_data
+            )
+        for condition in condition_data:
+            current_condition, status = (
+                models.Condition.objects.get_or_create(**condition)
+            )
+            models.WeatherCondition.objects.create(
+                weather=w_collect,
+                condition=current_condition
+            )
+        return w_collect
