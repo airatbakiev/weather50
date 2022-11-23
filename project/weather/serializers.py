@@ -70,6 +70,7 @@ class WeatherSerializer(serializers.ModelSerializer):
             'dt',
             'timezone',
             'city',
+            'iter_id'
         )
 
     def create(self, validated_data):

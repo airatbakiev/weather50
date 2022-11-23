@@ -29,8 +29,8 @@ class Condition(models.Model):
     icon = models.CharField('Идентификатор иконки', max_length=20)
 
     class Meta:
-        verbose_name = 'Погодное состояние'
-        verbose_name_plural = 'Погодные условия'
+        verbose_name = 'Вид состояния'
+        verbose_name_plural = 'Виды Погодных условий'
 
     def __str__(self):
         return self.description
@@ -41,20 +41,30 @@ class WeatherCollect(models.Model):
     visibility = models.FloatField('Видимость, метр', blank=True, null=True)
     dt = models.IntegerField('Время вычисления данных, unix, UTC', blank=True, null=True)
     timezone = models.IntegerField('Сдвиг от UTC, секунды', blank=True, null=True)
-    city = models.ForeignKey(City, on_delete=models.CASCADE)
+    city = models.ForeignKey(City, verbose_name='Город', on_delete=models.CASCADE)
     created = models.DateTimeField('Время создания записи', auto_now=True)
+    iter_id = models.IntegerField('Итерация')
 
     class Meta:
-        verbose_name = 'Сбор погодных показателей'
-        verbose_name_plural = 'Коллекция погоды'
+        verbose_name = 'Коллекция погоды'
+        verbose_name_plural = 'Коллекции погоды'
+        constraints = [
+            UniqueConstraint(
+                fields=['city', 'iter_id'], name='unique_collects'
+            ),
+        ]
 
     def __str__(self):
-        return f'{str(self.created)[:16]} ({self.city.name})'
+        return f'{str(self.created)[:16]} ({self.iter_id}) ({self.city.name})'
 
 
 class WeatherCondition(models.Model):
     weather = models.ForeignKey(WeatherCollect, on_delete=models.CASCADE)
     condition = models.ForeignKey(Condition, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Состояние Погоды'
+        verbose_name_plural = 'Состояния погоды'
 
 
 class MainParams(models.Model):
@@ -68,6 +78,10 @@ class MainParams(models.Model):
     grnd_level = models.FloatField('АД на ур земли, ГПа', blank=True, null=True)
     weather_collect = models.OneToOneField(WeatherCollect, on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name = 'Основные показатели'
+        verbose_name_plural = 'Основные показатели'
+
 
 class Wind(models.Model):
     speed = models.FloatField('Скор. ветра, метр/сек.', blank=True, null=True)
@@ -75,10 +89,18 @@ class Wind(models.Model):
     gust = models.FloatField('Порыв ветра, метр/сек.', blank=True, null=True)
     weather_collect = models.OneToOneField(WeatherCollect, on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name = 'Показатели ветра'
+        verbose_name_plural = 'Показатели ветра'
+
 
 class Clouds(models.Model):
     all = models.FloatField('Облачность, %', blank=True, null=True)
     weather_collect = models.OneToOneField(WeatherCollect, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Показатели облачности'
+        verbose_name_plural = 'Показатели облачности'
 
 
 class Rain(models.Model):
@@ -86,8 +108,16 @@ class Rain(models.Model):
     three_h = models.FloatField('За посл. 3 часа, мм', blank=True, null=True)
     weather_collect = models.OneToOneField(WeatherCollect, on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name = 'Показатели дождя'
+        verbose_name_plural = 'Показатели дождя'
+
 
 class Snow(models.Model):
     one_h = models.FloatField('За посл. 1 час, мм', blank=True, null=True)
     three_h = models.FloatField('За посл. 3 часа, мм', blank=True, null=True)
     weather_collect = models.OneToOneField(WeatherCollect, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Показатели снега'
+        verbose_name_plural = 'Показатели снега'

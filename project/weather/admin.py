@@ -64,9 +64,11 @@ class SnowAdmin(admin.ModelAdmin):
 
 
 class WeatherCollectAdmin(admin.ModelAdmin):
-    list_display = ('id', 'visibility', 'dt', 'timezone', 'created')
+    list_display = ('city', 'created', 'iter_id')
     inlines = [ConditionInLine, MainParamsInLine, WindInLine, CloudsInLine,
                RainInLine, SnowInLine]
+    search_fields = ('iter_id', )
+    list_filter = ('created', 'city')
 
 
 admin.site.register(models.City, CityAdmin)
