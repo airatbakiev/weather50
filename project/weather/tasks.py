@@ -2,47 +2,113 @@ from celery import shared_task
 import csv
 from django.conf import settings
 import json
+from logging import handlers
+import logging
+from requests.adapters import HTTPAdapter
 import requests
+import urllib3
 
-from . import models
+from . import models, serializers
+
+CSV_PATH = getattr(settings, 'BASE_DIR', {}) / 'data' / 'cities.csv'
+DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/country'
+DADATA_TOKEN = 'Token ' + getattr(settings, 'TOKEN', {})
+DADATA_HEADERS = {
+        'Authorization': DADATA_TOKEN,
+        'Content-Type': 'application/json'
+}
+BASE_GEO_URL = 'http://api.openweathermap.org/geo/1.0/direct'
+BASE_WEATHER_URL = 'http://api.openweathermap.org/data/2.5/weather'
+APPID = '&appid=' + getattr(settings, 'APPID', {})
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = handlers.RotatingFileHandler(
+    'weather50_logger.log', maxBytes=50000000, backupCount=5
+)
+formatter = logging.Formatter(
+    '%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s'
+)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+retry_strategy = urllib3.Retry(
+    total=5,
+    status_forcelist=[413, 429, 500, 502, 503, 504],
+    method_whitelist=['GET', 'POST'],
+    backoff_factor=1
+)
+adapter = HTTPAdapter(max_retries=retry_strategy)
+http = requests.Session()
+http.mount("https://", adapter)
+http.mount("http://", adapter)
 
 
 @shared_task
 def task_get_cities():
-    dadata_url = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/country'
-    token = 'Token ' + getattr(settings, 'TOKEN', {})
-    headers = {
-        'Authorization': token,
-        'Content-Type': 'application/json'
-    }
-    csv_path = getattr(settings, 'BASE_DIR', {}) / 'data' / 'cities.csv'
-    pk = 1
-    with open(
-            csv_path, newline='', encoding='utf-8'
-    ) as csvfile:
-        datareader = csv.DictReader(csvfile, delimiter=',')
-        for row in datareader:
-            json_data = json.dumps({'query': row['country']})
-            response = requests.post(dadata_url, data=json_data, headers=headers)
-            suggestions = response.json().get('suggestions')
-
-            ingredient = models.City(
-                id=pk,
-                name=row['name'],
-                country=row['country'],
-            )
-            ingredient.save()
-            pk += 1
-
-    return True
+    if models.City.objects.all().count() >= 50:
+        return
+    cities = []
+    try:
+        with open(
+            CSV_PATH, newline='', encoding='utf-8'
+        ) as csvfile:
+            datareader = csv.DictReader(csvfile, delimiter=',')
+            for row in datareader:
+                json_data = json.dumps({'query': row['country']})
+                response = http.post(
+                    DADATA_URL, data=json_data, headers=DADATA_HEADERS, timeout=5
+                ).json()
+                if not response['suggestions']:
+                    break
+                suggestion = response.get('suggestions')[0]
+                country = suggestion['data']['alfa2']
+                params = '?q= ' + row['name'] + ',' + country + '&limit=1'
+                geo_url = BASE_GEO_URL + params + APPID
+                response = http.get(geo_url, timeout=5).json()[0]
+                cities.append(
+                    models.City(
+                        name=row['name'],
+                        country=country,
+                        country_name=row['country'],
+                        lat=response['lat'],
+                        lon=response['lon']
+                    )
+                )
+    except EOFError as file_error:
+        logger.error(file_error)
+    except FileNotFoundError as path_error:
+        raise path_error
+    except requests.ConnectionError as crash:
+        msg = f'Нет связи с внешним сервисом. Ошибка: {crash}'
+        logger.error(msg)
+    else:
+        models.City.objects.bulk_create(cities, ignore_conflicts=True)
+        logger.info('Успешная загрузка 50 городов в БД')
 
 
 @shared_task
 def task_get_weather():
-    base_url = 'https://api.openweathermap.org/data/2.5/weather'
-    appid = '&appid=' + getattr(settings, 'APPID', {})
-    # TODO: add params
-    params = '?'
-    api_url = base_url + params + appid
-    response = requests.get(api_url)
-    return True
+    iteration = models.WeatherCollect.objects.latest('created').iter_id
+    cities = models.City.objects.values()
+    for city in cities:
+        params = ('?lat=' + str(city['lat']) + '&lon=' + str(city['lon'])
+                  + '&lang=ru&units=metric')
+        weather_url = BASE_WEATHER_URL + params + APPID
+        try:
+            response = http.get(weather_url, timeout=5).json()
+            response['city'] = city
+            response['iter_id'] = iteration + 1
+            serializer = serializers.WeatherSerializer(data=response)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                error_msg = ('Данные, отправленные в сериализатор, невалидны.'
+                             f'Данные по {city["name"]} в БД не записаны.'
+                             'Проверьте типы данных из внешнего API.')
+                logger.error(error_msg)
+        except requests.ConnectionError as crash:
+            msg = f'Нет связи с внешним сервисом. Ошибка: {crash}'
+            logger.error(msg)
+        except Exception as error:
+            logger.error(f'Непредвиденная ошибка: {error}')

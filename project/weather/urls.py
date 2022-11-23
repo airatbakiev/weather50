@@ -2,9 +2,10 @@ from django.urls import path
 
 from . import views
 
-app_name = 'weather'
+app_name = 'main'
 
 urlpatterns = [
+    path('', views.main_page(), name='main_page'),
     path('cities/', views.get_cities, name='cities'),
-    path('data/', views.get_weather, name='data')
+    path('weather/', views.get_weather, name='weather')
 ]

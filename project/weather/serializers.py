@@ -59,19 +59,8 @@ class WeatherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.WeatherCollect
-        fields = (
-            'weather',
-            'main',
-            'visibility',
-            'wind',
-            'clouds',
-            'rain',
-            'snow',
-            'dt',
-            'timezone',
-            'city',
-            'iter_id'
-        )
+        fields = ('weather', 'main', 'visibility', 'wind', 'clouds', 'rain',
+                  'snow', 'dt', 'timezone', 'city', 'iter_id')
 
     def create(self, validated_data):
         # Подготовка данных к записи
