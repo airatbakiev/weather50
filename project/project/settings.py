@@ -17,7 +17,7 @@ APPID = os.getenv('APPID')
 TOKEN = os.getenv('TOKEN')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -80,14 +80,12 @@ CELERY_BROKER_URL = 'redis://broker:6379'
 
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv(
-            'DB_ENGINE', default='django.db.backends.postgresql'
-        ),
-        'NAME': os.getenv('DB_NAME', default='postgres'),
-        'USER': os.getenv('POSTGRES_USER', default='postgres'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', default='postgres'),
-        'HOST': os.getenv('DB_HOST', default='127.0.0.1'),
-        'PORT': os.getenv('DB_PORT', default='5432'),
+        'ENGINE': os.getenv('DB_ENGINE'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
@@ -128,7 +126,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

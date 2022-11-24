@@ -1,52 +1,52 @@
-import csv
-from django.conf import settings
+# import csv
+# from django.conf import settings
 from django.http import HttpResponse
-from logging import handlers
-from requests.adapters import HTTPAdapter
-import json
-import logging
-import requests
-import urllib3
+# from logging import handlers
+# from requests.adapters import HTTPAdapter
+# import json
+# import logging
+# import requests
+# import urllib3
+#
+# # from . import models, serializers
+from weather import tasks
 
-# from . import models, serializers
-from . import tasks
-
-CSV_PATH = getattr(settings, 'BASE_DIR', {}) / 'data' / 'cities.csv'
-DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/country'
-DADATA_TOKEN = 'Token ' + getattr(settings, 'TOKEN', {})
-DADATA_HEADERS = {
-        'Authorization': DADATA_TOKEN,
-        'Content-Type': 'application/json'
-}
-BASE_GEO_URL = 'http://api.openweathermap.org/geo/1.0/direct'
-BASE_WEATHER_URL = 'http://api.openweathermap.org/data/2.5/weather'
-APPID = '&appid=' + getattr(settings, 'APPID', {})
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = handlers.RotatingFileHandler(
-    'weather50_logger.log', maxBytes=50000000, backupCount=5
-)
-formatter = logging.Formatter(
-    '%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s'
-)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-
-retry_strategy = urllib3.Retry(
-    total=5,
-    status_forcelist=[413, 429, 500, 502, 503, 504],
-    method_whitelist=['GET', 'POST'],
-    backoff_factor=1
-)
-adapter = HTTPAdapter(max_retries=retry_strategy)
-http = requests.Session()
-http.mount("https://", adapter)
-http.mount("http://", adapter)
+# CSV_PATH = getattr(settings, 'BASE_DIR', {}) / 'data' / 'cities.csv'
+# DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/country'
+# DADATA_TOKEN = 'Token ' + getattr(settings, 'TOKEN', {})
+# DADATA_HEADERS = {
+#         'Authorization': DADATA_TOKEN,
+#         'Content-Type': 'application/json'
+# }
+# BASE_GEO_URL = 'http://api.openweathermap.org/geo/1.0/direct'
+# BASE_WEATHER_URL = 'http://api.openweathermap.org/data/2.5/weather'
+# APPID = '&appid=' + getattr(settings, 'APPID', {})
+#
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+# handler = handlers.RotatingFileHandler(
+#     'weather50_logger.log', maxBytes=50000000, backupCount=5
+# )
+# formatter = logging.Formatter(
+#     '%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s'
+# )
+# handler.setFormatter(formatter)
+# logger.addHandler(handler)
+#
+# retry_strategy = urllib3.Retry(
+#     total=5,
+#     status_forcelist=[413, 429, 500, 502, 503, 504],
+#     method_whitelist=['GET', 'POST'],
+#     backoff_factor=1
+# )
+# adapter = HTTPAdapter(max_retries=retry_strategy)
+# http = requests.Session()
+# http.mount("https://", adapter)
+# http.mount("http://", adapter)
 
 
 def get_cities(request):
-    tasks.task_get_cities.delay()
+    tasks.get_cities.delay()
     return HttpResponse('Города загружаются')
     # if models.City.objects.all().count() >= 50:
     #     return
@@ -92,7 +92,7 @@ def get_cities(request):
 
 
 def get_weather(request):
-    tasks.task_get_weather.delay()
+    tasks.get_weather.delay()
     return HttpResponse('Погода загружается')
     # iteration = models.WeatherCollect.objects.latest('created').iter_id
     # cities = models.City.objects.values()

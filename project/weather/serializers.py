@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from . import models
+from weather import models
 
 
 class ConditionSerializer(serializers.ModelSerializer):

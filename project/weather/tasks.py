@@ -8,7 +8,8 @@ from requests.adapters import HTTPAdapter
 import requests
 import urllib3
 
-from . import models, serializers
+from weather import models
+from weather import serializers
 
 CSV_PATH = getattr(settings, 'BASE_DIR', {}) / 'data' / 'cities.csv'
 DADATA_URL = 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/country'
@@ -45,7 +46,7 @@ http.mount("http://", adapter)
 
 
 @shared_task
-def task_get_cities():
+def get_cities():
     if models.City.objects.all().count() >= 50:
         return
     cities = []
@@ -85,11 +86,15 @@ def task_get_cities():
     else:
         models.City.objects.bulk_create(cities, ignore_conflicts=True)
         logger.info('Успешная загрузка 50 городов в БД')
+    return
 
 
 @shared_task
-def task_get_weather():
-    iteration = models.WeatherCollect.objects.latest('created').iter_id
+def get_weather():
+    iteration = 0
+    last_weather_obj = models.WeatherCollect.objects.first()
+    if last_weather_obj:
+        iteration = last_weather_obj.iter_id
     cities = models.City.objects.values()
     for city in cities:
         params = ('?lat=' + str(city['lat']) + '&lon=' + str(city['lon'])
@@ -112,3 +117,4 @@ def task_get_weather():
             logger.error(msg)
         except Exception as error:
             logger.error(f'Непредвиденная ошибка: {error}')
+    return
