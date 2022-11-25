@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'weather.apps.WeatherConfig',
     'users.apps.UsersConfig',
+    'django_celery_beat'
 ]
 
 MIDDLEWARE = [
@@ -71,13 +72,6 @@ CELERY_BROKER_URL = 'redis://broker:6379'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE'),
@@ -113,7 +107,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
