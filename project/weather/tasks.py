@@ -92,9 +92,8 @@ def get_cities():
 @shared_task
 def get_weather():
     iteration = 0
-    last_weather_obj = models.WeatherCollect.objects.first()
-    if last_weather_obj:
-        iteration = last_weather_obj.iter_id
+    if models.WeatherCollect.objects.count() > 0:
+        iteration = models.WeatherCollect.objects.latest('iter_id').iter_id
     cities = models.City.objects.values()
     for city in cities:
         params = ('?lat=' + str(city['lat']) + '&lon=' + str(city['lon'])

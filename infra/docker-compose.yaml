@@ -7,7 +7,7 @@ services:
     volumes:
       - db:/var/lib/postgresql/data/
     env_file:
-      - ./.env
+      - ../project/project/.env
 
   broker:
     image: redis
@@ -27,6 +27,7 @@ services:
       sh -c "python3 manage.py makemigrations &&
              python3 manage.py migrate && 
              python3 manage.py autocreatesuperuser &&
+             python3 manage.py create_initial_schedule &&
              python3 manage.py runserver 0.0.0.0:8000"
 
   worker:

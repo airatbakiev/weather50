@@ -46,9 +46,9 @@ class WeatherCollect(models.Model):
     iter_id = models.IntegerField('Итерация')
 
     class Meta:
-        ordering = ('-id',)
+        ordering = ('-iter_id',)
         verbose_name = 'Коллекция погоды'
-        verbose_name_plural = 'ГЛАВНАЯ ТАБЛИЦА'
+        verbose_name_plural = 'КОЛЛЕКЦИЯ ПОГОДЫ ПО ГОРОДАМ'
         constraints = [
             UniqueConstraint(
                 fields=['city', 'iter_id'], name='unique_collects'
