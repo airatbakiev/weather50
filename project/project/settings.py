@@ -15,6 +15,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('KEY')
 APPID = os.getenv('APPID')
 TOKEN = os.getenv('TOKEN')
+ADMIN_USERNAME = os.getenv('ADMIN')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASS')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
